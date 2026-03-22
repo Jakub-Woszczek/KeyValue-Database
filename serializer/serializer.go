@@ -1,9 +1,10 @@
-package main
+package serializer
 
 import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"bytes"
 )
 
 const headerSize = 8;
@@ -27,7 +28,9 @@ func Encode(key []byte, value []byte) []byte {
     return save_buf
 }
 
-func Decode(r io.Reader) (key,val []byte, err error) {
+func Decode(buff []byte) (key,val []byte, err error) {
+	r := bytes.NewReader(buff)
+
 	header := make([]byte, headerSize)
 	
 	_, err = io.ReadFull(r, header)

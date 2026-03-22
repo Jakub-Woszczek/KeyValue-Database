@@ -1,18 +1,17 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/Jakub-Woszczek/kvdb/serializer"
 )
 
 func main() {
 	key := []byte("myKey")
 	value := []byte("myValue")
 
-	buff := Encode(key,value)
+	buff := serializer.Encode(key,value)
 
-	r := bytes.NewReader(buff)
-	key,val,err := Decode(r)
+	key,val,err := serializer.Decode(buff)
 
 	fmt.Println(key)
 	fmt.Println(val)
