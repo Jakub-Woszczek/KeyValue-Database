@@ -2,18 +2,18 @@ package main
 
 import (
 	"fmt"
-	"github.com/Jakub-Woszczek/kvdb/serializer"
+	// "github.com/Jakub-Woszczek/kvdb/serializer"
+	"github.com/Jakub-Woszczek/kvdb/memtable"
 )
 
 func main() {
 	key := []byte("myKey")
 	value := []byte("myValue")
 
-	buff := serializer.Encode(key,value)
+	node := memtable.Node{}
+	fmt.Printf("Original key: %s, value: %s\n", key, value)
 
-	key,val,err := serializer.Decode(buff)
-
-	fmt.Println(key)
-	fmt.Println(val)
-	fmt.Println(err)
+	fmt.Println(node)
+	node.Key = key
+	fmt.Println(node)
 }
