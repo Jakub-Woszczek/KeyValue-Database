@@ -1,38 +1,38 @@
 package serializer
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
-	"bytes"
 )
 
-const headerSize = 8;
+const headerSize = 8
 
 // Encode serializes a key-value pair into bytes.
-// Format: [key_len uint32][val_len uint32][key bytes][val bytes]
+// Format: [keyLen uint32][valueLen uint32][key bytes][val bytes]
 func Encode(key []byte, value []byte) []byte {
 
-	key_len := len(key)
-	value_len := len(value)
+	keyLen := len(key)
+	valueLen := len(value)
 
-	total_size := headerSize + key_len + value_len
-	save_buf := make([]byte,total_size)
+	totalSize := headerSize + keyLen + valueLen
+	saveBuf := make([]byte, totalSize)
 
-	binary.LittleEndian.PutUint32(save_buf[0:], uint32(key_len))
-	binary.LittleEndian.PutUint32(save_buf[4:], uint32(value_len))
+	binary.LittleEndian.PutUint32(saveBuf[0:], uint32(keyLen))
+	binary.LittleEndian.PutUint32(saveBuf[4:], uint32(valueLen))
 
-    copy(save_buf[8:], key)
-    copy(save_buf[8+len(key):], value)
-	
-    return save_buf
+	copy(saveBuf[8:], key)
+	copy(saveBuf[8+len(key):], value)
+
+	return saveBuf
 }
 
-func Decode(buff []byte) (key,val []byte, err error) {
+func Decode(buff []byte) (key, val []byte, err error) {
 	r := bytes.NewReader(buff)
 
 	header := make([]byte, headerSize)
-	
+
 	_, err = io.ReadFull(r, header)
 	if err != nil {
 		return nil, nil, err
@@ -46,13 +46,13 @@ func Decode(buff []byte) (key,val []byte, err error) {
 		return nil, nil, fmt.Errorf("record too large: key=%d val=%d", keyLen, valLen)
 	}
 
-	key = make([]byte,keyLen)
+	key = make([]byte, keyLen)
 	_, err = io.ReadFull(r, key)
 	if err != nil {
 		return nil, nil, err
 	}
-	
-	val = make([]byte,valLen)
+
+	val = make([]byte, valLen)
 	_, err = io.ReadFull(r, val)
 	if err != nil {
 		return nil, nil, err
@@ -60,4 +60,3 @@ func Decode(buff []byte) (key,val []byte, err error) {
 
 	return
 }
-

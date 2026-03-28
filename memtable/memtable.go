@@ -124,7 +124,6 @@ func (T *MEMTABLE) RotateLeft(x *Node) {
 	}
 	y.left = x
 	x.parent = y
-	return
 }
 
 // Cormen et al. Introduction to Algorithms, 4rd Edition, Chapter 13.2
@@ -147,5 +146,4 @@ func (T *MEMTABLE) RotateRight(x *Node) {
 	}
 	y.right = x
 	x.parent = y
-	return
 }
