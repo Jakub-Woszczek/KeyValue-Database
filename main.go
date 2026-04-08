@@ -1,19 +1,29 @@
 package main
 
 import (
-	"fmt"
+	// "fmt"
 	// "github.com/Jakub-Woszczek/kvdb/serializer"
-	"github.com/Jakub-Woszczek/kvdb/memtable"
+	// "github.com/Jakub-Woszczek/kvdb/memtable"
+	"flag"
+	"fmt"
+	// "github.com/Jakub-Woszczek/kvdb/visualizer"
 )
 
+var flagvar int
+var verbose bool
+
 func main() {
-	key := []byte("myKey")
-	value := []byte("myValue")
+	// visualizer.Visualize()
+	var flagN = flag.Int("n", 15, "number of random keys to insert")
+	flag.IntVar(&flagvar, "flagname", 1234, "help message for flagname")
+	verbose := flag.Bool("v", false, "enable verbose mode")
 
-	node := memtable.Node{}
-	fmt.Printf("Original key: %s, value: %s\n", key, value)
+	flag.Parse()
 
-	fmt.Println(node)
-	node.Key = key
-	fmt.Println(node)
+	fmt.Printf("Inserting %d random keys into the memtable...\n", *flagN)
+	fmt.Println("flagvar has value ", flagvar)
+	if *verbose {
+		fmt.Println("Verbose mode enabled")
+	}
+
 }

@@ -8,12 +8,12 @@ type MEMTABLE struct {
 
 type Node struct {
 	Key         []byte
-	value       []byte
-	left        *Node
-	right       *Node
-	parent      *Node
-	isTombstone bool
-	color       bool // True for black, false for red
+	Value       []byte
+	Left        *Node
+	Right       *Node
+	Parent      *Node
+	IsTombstone bool
+	Color       bool // True for black, false for red
 }
 
 func NewMemtable() *MEMTABLE {
@@ -33,47 +33,47 @@ func (mTable *MEMTABLE) Insert(key []byte, value []byte) {
 
 // Cormen et al. Introduction to Algorithms, 4rd Edition, Chapter 13.3
 func (mTable *MEMTABLE) fixInsert(z *Node) {
-	for z.parent != nil && !z.parent.color {
-		if z.parent == z.parent.parent.left {
-			y := z.parent.parent.right // uncle
-			if y != nil && !y.color {
-				z.parent.color = true
-				y.color = true
-				z.parent.parent.color = false
-				z = z.parent.parent
+	for z.Parent != nil && !z.Parent.Color {
+		if z.Parent == z.Parent.Parent.Left {
+			y := z.Parent.Parent.Right // uncle
+			if y != nil && !y.Color {
+				z.Parent.Color = true
+				y.Color = true
+				z.Parent.Parent.Color = false
+				z = z.Parent.Parent
 			} else {
-				if z == z.parent.right {
-					z = z.parent
+				if z == z.Parent.Right {
+					z = z.Parent
 					mTable.RotateLeft(z)
 				}
-				z.parent.color = true
-				z.parent.parent.color = false
-				mTable.RotateRight(z.parent.parent)
+				z.Parent.Color = true
+				z.Parent.Parent.Color = false
+				mTable.RotateRight(z.Parent.Parent)
 			}
 		} else { // parent is a right child (mirror)
-			y := z.parent.parent.left // uncle
-			if y != nil && !y.color {
-				z.parent.color = true
-				y.color = true
-				z.parent.parent.color = false
-				z = z.parent.parent
+			y := z.Parent.Parent.Left // uncle
+			if y != nil && !y.Color {
+				z.Parent.Color = true
+				y.Color = true
+				z.Parent.Parent.Color = false
+				z = z.Parent.Parent
 			} else {
-				if z == z.parent.left {
-					z = z.parent
+				if z == z.Parent.Left {
+					z = z.Parent
 					mTable.RotateRight(z)
 				}
-				z.parent.color = true
-				z.parent.parent.color = false
-				mTable.RotateLeft(z.parent.parent)
+				z.Parent.Color = true
+				z.Parent.Parent.Color = false
+				mTable.RotateLeft(z.Parent.Parent)
 			}
 		}
 	}
-	mTable.Root.color = true
+	mTable.Root.Color = true
 }
 
 func (mTable *MEMTABLE) RBInsert(key []byte, value []byte) *Node {
 	if mTable.Root == nil {
-		mTable.Root = &Node{Key: key, value: value, color: true} // root is always black
+		mTable.Root = &Node{Key: key, Value: value, Color: true} // root is always black
 		return nil
 	}
 
@@ -83,22 +83,22 @@ func (mTable *MEMTABLE) RBInsert(key []byte, value []byte) *Node {
 		switch bytes.Compare(key, x.Key) {
 		// case -1 or 0: key in smaller than node key
 		case -1, 0:
-			if x.left == nil {
-				y := &Node{Key: key, value: value, color: false}
-				x.left = y
-				y.parent = x
+			if x.Left == nil {
+				y := &Node{Key: key, Value: value, Color: false}
+				x.Left = y
+				y.Parent = x
 				return y
 			}
-			x = x.left
+			x = x.Left
 		// case 1: key is greater than node key
 		case 1:
-			if x.right == nil {
-				y := &Node{Key: key, value: value, color: false}
-				x.right = y
-				y.parent = x
+			if x.Right == nil {
+				y := &Node{Key: key, Value: value, Color: false}
+				x.Right = y
+				y.Parent = x
 				return y
 			}
-			x = x.right
+			x = x.Right
 		}
 	}
 	return nil
@@ -106,44 +106,44 @@ func (mTable *MEMTABLE) RBInsert(key []byte, value []byte) *Node {
 
 // Cormen et al. Introduction to Algorithms, 4rd Edition, Chapter 13.2
 func (T *MEMTABLE) RotateLeft(x *Node) {
-	if x.right == nil {
+	if x.Right == nil {
 		return
 	}
-	y := x.right
-	x.right = y.left
-	if y.left != nil {
-		y.left.parent = x
+	y := x.Right
+	x.Right = y.Left
+	if y.Left != nil {
+		y.Left.Parent = x
 	}
-	y.parent = x.parent
-	if x.parent == nil {
+	y.Parent = x.Parent
+	if x.Parent == nil {
 		T.Root = y
-	} else if x == x.parent.left {
-		x.parent.left = y
+	} else if x == x.Parent.Left {
+		x.Parent.Left = y
 	} else {
-		x.parent.right = y
+		x.Parent.Right = y
 	}
-	y.left = x
-	x.parent = y
+	y.Left = x
+	x.Parent = y
 }
 
 // Cormen et al. Introduction to Algorithms, 4rd Edition, Chapter 13.2
 func (T *MEMTABLE) RotateRight(x *Node) {
-	if x.left == nil {
+	if x.Left == nil {
 		return
 	}
-	y := x.left
-	x.left = y.right
-	if y.right != nil {
-		y.right.parent = x
+	y := x.Left
+	x.Left = y.Right
+	if y.Right != nil {
+		y.Right.Parent = x
 	}
-	y.parent = x.parent
-	if x.parent == nil {
+	y.Parent = x.Parent
+	if x.Parent == nil {
 		T.Root = y
-	} else if x == x.parent.right {
-		x.parent.right = y
+	} else if x == x.Parent.Right {
+		x.Parent.Right = y
 	} else {
-		x.parent.left = y
+		x.Parent.Left = y
 	}
-	y.right = x
-	x.parent = y
+	y.Right = x
+	x.Parent = y
 }
