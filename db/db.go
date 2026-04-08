@@ -38,3 +38,7 @@ func (db *DB) Put(key, value []byte) error {
 func (db *DB) Get(key []byte) []byte {
 	return db.Memtable.Get(key)
 }
+
+func (db *DB) Close(rmWalFile bool) error {
+	return db.Wal.Close(rmWalFile)
+}

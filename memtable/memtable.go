@@ -42,7 +42,7 @@ func (mTable *MEMTABLE) Get(key []byte) []byte {
 func (mTable *MEMTABLE) Insert(key []byte, value []byte) {
 	newNode := mTable.RBInsert(key, value)
 	if newNode == nil {
-		// new node is root
+		// new node is root or value was updated
 		return
 	}
 
@@ -100,8 +100,12 @@ func (mTable *MEMTABLE) RBInsert(key []byte, value []byte) *Node {
 	x := mTable.Root
 	for x != nil {
 		switch bytes.Compare(key, x.Key) {
-		// case -1 or 0: key in smaller than node key
-		case -1, 0:
+		// case 0: update value
+		case 0:
+			x.Value = value
+			return nil
+		// case -1 key in smaller than node key
+		case -1:
 			if x.Left == nil {
 				y := &Node{Key: key, Value: value, Color: false}
 				x.Left = y

@@ -67,3 +67,12 @@ func (w *WAL) AppendRecord(key, value []byte) (LSN, error) {
 
 	return LSN(lsn), nil
 }
+
+func (w *WAL) Close(rmWalFile bool) error {
+	if rmWalFile {
+		if err := os.Remove(w.walPath); err != nil {
+			return fmt.Errorf("failed to remove WAL file: %w", err)
+		}
+	}
+	return w.walFile.Close()
+}
