@@ -20,6 +20,25 @@ func NewMemtable() *MEMTABLE {
 	return &MEMTABLE{Root: nil}
 }
 
+func (mTable *MEMTABLE) Get(key []byte) []byte {
+	x := mTable.Root
+	if x == nil {
+		return nil
+	}
+
+	for x != nil {
+		switch bytes.Compare(key, x.Key) {
+		case 0:
+			return x.Value
+		case -1:
+			x = x.Left
+		case 1:
+			x = x.Right
+		}
+	}
+	return nil
+}
+
 func (mTable *MEMTABLE) Insert(key []byte, value []byte) {
 	newNode := mTable.RBInsert(key, value)
 	if newNode == nil {
