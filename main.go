@@ -8,22 +8,25 @@ import (
 	"fmt"
 	"os"
 
-	// "github.com/Jakub-Woszczek/kvdb/visualizer"
 	"github.com/Jakub-Woszczek/kvdb/db"
+	"github.com/Jakub-Woszczek/kvdb/sandbox"
 	"github.com/Jakub-Woszczek/kvdb/server"
+	"github.com/Jakub-Woszczek/kvdb/visualizer"
 	"github.com/joho/godotenv"
 )
 
 var flagvar int
 
-// var verbose bool
+var runVis bool
 var runServer bool
+var runSandbox bool
 
 func main() {
 	// var flagN = flag.Int("n", 15, "number of random keys to insert")
 	// flag.IntVar(&flagvar, "flagname", 1234, "help message for flagname")
-	// verbose := flag.Bool("v", false, "enable verbose mode")
+	flag.BoolVar(&runVis, "v", false, "run the visualizer")
 	flag.BoolVar(&runServer, "s", false, "run the server")
+	flag.BoolVar(&runSandbox, "sdbx", false, "run the sandbox code")
 
 	flag.Parse()
 
@@ -54,6 +57,16 @@ func main() {
 		}
 		fmt.Println("kvdb listening on :" + serverPort)
 		srv.Serve()
+		return
+	}
+	if runVis {
+		fmt.Println("Running visualizer...")
+		visualizer.Visualize()
+		return
+	}
+	if runSandbox {
+		fmt.Println("Running sandbox...")
+		sandbox.HowMuchMemo()
 	}
 
 }

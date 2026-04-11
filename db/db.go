@@ -18,11 +18,11 @@ func NewDB() (*DB, error) {
 		return nil, fmt.Errorf("failed to initialize WAL: %w", err)
 	}
 
-	d := &DB{
+	db := &DB{
 		Memtable: memtable.NewMemtable(),
 		Wal:      Wal,
 	}
-	return d, nil
+	return db, nil
 }
 
 func (db *DB) Put(key, value []byte) error {
