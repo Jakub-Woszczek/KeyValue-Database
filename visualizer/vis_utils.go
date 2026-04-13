@@ -40,12 +40,7 @@ func printNode(n *memtable.Node, prefix string, isTail bool) {
 		fmt.Print("┌── ")
 	}
 
-	color := "R"
-	if n.Color {
-		color = "B"
-	}
-
-	fmt.Printf("%s(%s)\n", formatKey(n.Key), color)
+	fmt.Printf("%s\n", formatKey(n.Key))
 
 	// Lewa strona
 	if n.Left != nil {

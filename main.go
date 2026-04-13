@@ -9,32 +9,27 @@ import (
 	"os"
 
 	"github.com/Jakub-Woszczek/kvdb/db"
+	"github.com/Jakub-Woszczek/kvdb/memtable"
 	"github.com/Jakub-Woszczek/kvdb/sandbox"
 	"github.com/Jakub-Woszczek/kvdb/server"
+	"github.com/Jakub-Woszczek/kvdb/sstable"
 	"github.com/Jakub-Woszczek/kvdb/visualizer"
 	"github.com/joho/godotenv"
 )
 
-var flagvar int
-
 var runVis bool
 var runServer bool
 var runSandbox bool
+var runSSTable bool
 
 func main() {
-	// var flagN = flag.Int("n", 15, "number of random keys to insert")
-	// flag.IntVar(&flagvar, "flagname", 1234, "help message for flagname")
 	flag.BoolVar(&runVis, "v", false, "run the visualizer")
 	flag.BoolVar(&runServer, "s", false, "run the server")
 	flag.BoolVar(&runSandbox, "sdbx", false, "run the sandbox code")
+	flag.BoolVar(&runSSTable, "st", false, "run sstable")
 
 	flag.Parse()
 
-	// fmt.Printf("Inserting %d random keys into the memtable...\n", *flagN)
-	// fmt.Println("flagvar has value ", flagvar)
-	// if *verbose {
-	// fmt.Println("Verbose mode enabled")
-	// }
 	if runServer {
 		godotenv.Load()
 		fmt.Println("Starting server...")
@@ -66,7 +61,16 @@ func main() {
 	}
 	if runSandbox {
 		fmt.Println("Running sandbox...")
-		sandbox.HowMuchMemo()
+		sandbox.EasyCompareXD()
+	}
+	if runSSTable {
+		fmt.Println("Running SSTable builder...")
+		s := sstable.SSTable{SSTableFilePath: "sstable.dat"}
+		m, _ := memtable.GenerateRandomTree(3)
+
+		visualizer.PrintTree(m)
+		s.BuildSSTable(m)
+		return
 	}
 
 }

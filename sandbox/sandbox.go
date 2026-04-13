@@ -1,8 +1,10 @@
 package sandbox
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/Jakub-Woszczek/kvdb/memtable"
+	// "math/rand"
 	"runtime"
 	"unsafe"
 )
@@ -87,4 +89,14 @@ func HowMuchMemo() {
 
 	fmt.Printf("Size of Node struct: %d bytes\n", unsafe.Sizeof(node))
 	fmt.Printf("Computed size: %d bytes ", entrySize)
+}
+
+func EasyCompareXD() {
+	k1 := 48
+	k2 := 8
+
+	fmt.Println("Comparing keys: ", bytes.Compare([]byte(fmt.Sprintf("%d", k1)), []byte(fmt.Sprintf("%d", k2))))
+
+	// myStr := rand.
+	// fmt.Printf("Random string: %s", myStr)
 }
