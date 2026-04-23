@@ -2,13 +2,12 @@ package visualizer
 
 import (
 	"fmt"
-
-	"github.com/Jakub-Woszczek/kvdb/memtable"
+	// "github.com/Jakub-Woszczek/kvdb/memtable"
 )
 
 func Visualize() {
 	N := 4 // Number of random keys to insert
-	m, keys := memtable.GenerateRandomTree(N)
+	m, keys := GenerateRandomTree(N, false)
 
 	fmt.Println("Wygenerowane klucze:", keys)
 	fmt.Println("\nDrzewo RB:")

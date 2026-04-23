@@ -1,4 +1,4 @@
-package memtable
+package visualizer
 
 import (
 	"encoding/binary"
@@ -7,10 +7,13 @@ import (
 
 	// "strconv"
 	"time"
+
+	"github.com/Jakub-Woszczek/kvdb/memtable"
+	// "github.com/Jakub-Woszczek/kvdb/visualizer"
 )
 
 const charset = "abcdefghijklmnopqrstuvwxyz"
-const keySize = 5
+const keySize = 3
 
 func randomString(length int) string {
 	rand.Seed(time.Now().UnixNano())
@@ -21,8 +24,8 @@ func randomString(length int) string {
 	return string(b)
 }
 
-func GenerateRandomTree(N int) (m *MEMTABLE, keys []string) {
-	m = NewMemtable()
+func GenerateRandomTree(N int, showBuild bool) (m *memtable.MEMTABLE, keys []string) {
+	m = memtable.NewMemtable()
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -32,6 +35,8 @@ func GenerateRandomTree(N int) (m *MEMTABLE, keys []string) {
 		k := []byte(keys[i])
 		v := []byte(fmt.Sprintf("VAL-%s", keys[i]))
 		m.Insert(k, v)
+		PrintTree(m)
+		fmt.Println("-----------------------------")
 	}
 	return m, keys
 }

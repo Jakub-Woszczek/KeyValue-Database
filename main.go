@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/Jakub-Woszczek/kvdb/db"
-	"github.com/Jakub-Woszczek/kvdb/memtable"
+	// "github.com/Jakub-Woszczek/kvdb/memtable"
 	"github.com/Jakub-Woszczek/kvdb/sandbox"
 	"github.com/Jakub-Woszczek/kvdb/server"
 	"github.com/Jakub-Woszczek/kvdb/sstable"
@@ -66,7 +66,7 @@ func main() {
 	if runSSTable {
 		fmt.Println("Running SSTable builder...")
 		s := sstable.SSTable{SSTableFilePath: "sstable.dat"}
-		m, _ := memtable.GenerateRandomTree(3)
+		m, _ := visualizer.GenerateRandomTree(4, true)
 
 		visualizer.PrintTree(m)
 		s.BuildSSTable(m)
