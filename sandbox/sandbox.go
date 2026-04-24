@@ -1,9 +1,12 @@
 package sandbox
 
 import (
+	// "bytes"
 	"bytes"
 	"fmt"
+
 	"github.com/Jakub-Woszczek/kvdb/memtable"
+
 	// "math/rand"
 	"runtime"
 	"unsafe"
@@ -92,11 +95,11 @@ func HowMuchMemo() {
 }
 
 func EasyCompareXD() {
-	k1 := 48
-	k2 := 8
+	s := []byte("costam")
+	fmt.Println(string(s[1 : 1+2]))
 
-	fmt.Println("Comparing keys: ", bytes.Compare([]byte(fmt.Sprintf("%d", k1)), []byte(fmt.Sprintf("%d", k2))))
-
-	// myStr := rand.
-	// fmt.Printf("Random string: %s", myStr)
+	// l,,m so b is on right side
+	a := []byte("clq")
+	b := []byte("cni")
+	fmt.Printf("compare: %v", bytes.Compare(a, b))
 }

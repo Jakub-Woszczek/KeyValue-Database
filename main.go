@@ -21,12 +21,14 @@ var runVis bool
 var runServer bool
 var runSandbox bool
 var runSSTable bool
+var runSSTableRead bool
 
 func main() {
 	flag.BoolVar(&runVis, "v", false, "run the visualizer")
 	flag.BoolVar(&runServer, "s", false, "run the server")
 	flag.BoolVar(&runSandbox, "sdbx", false, "run the sandbox code")
 	flag.BoolVar(&runSSTable, "st", false, "run sstable")
+	flag.BoolVar(&runSSTableRead, "stg", false, "run sstable get method")
 
 	flag.Parse()
 
@@ -72,5 +74,32 @@ func main() {
 		s.BuildSSTable(m)
 		return
 	}
+	if runSSTableRead {
+		fmt.Println("Running SSTable reader...")
 
+		s := sstable.SSTable{SSTableFilePath: "sstable.dat"}
+
+		keys := [][]byte{
+			[]byte("clq"),
+			[]byte("cni"),
+			[]byte("jhf"),
+			[]byte("wzy"),
+		}
+
+		for _, k := range keys {
+			val, err := s.Get(k)
+			if err != nil {
+				fmt.Printf("%s -> ERROR: %v\n", k, err)
+				continue
+			}
+			if val == nil {
+				fmt.Printf("%s -> <not found>\n", k)
+				continue
+			}
+
+			fmt.Printf("%s -> %s\n", k, val)
+		}
+
+		return
+	}
 }
