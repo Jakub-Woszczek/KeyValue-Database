@@ -37,7 +37,7 @@ func main() {
 	if runServer {
 		godotenv.Load()
 		fmt.Println("Starting server...")
-		d, err := db.NewDB()
+		d, err := db.NewDB(10)
 		if err != nil {
 			fmt.Println("Failed to initialize database:", err)
 			return
@@ -98,12 +98,12 @@ func main() {
 		}
 
 		for _, k := range keys {
-			val, err := s.Get(k)
+			val, found, err := s.Get(k)
 			if err != nil {
 				fmt.Printf("%s -> ERROR: %v\n", k, err)
 				continue
 			}
-			if val == nil {
+			if found == false {
 				fmt.Printf("%s -> <not found>\n", k)
 				continue
 			}

@@ -4,6 +4,7 @@ import "bytes"
 
 type Memtable struct {
 	Root *Node
+	Size int
 }
 
 type Node struct {
@@ -17,30 +18,36 @@ type Node struct {
 }
 
 func NewMemtable() *Memtable {
-	return &Memtable{Root: nil}
+	return &Memtable{
+		Root: nil,
+		Size: 0,
+	}
 }
 
-func (mTable *Memtable) Get(key []byte) []byte {
+func (mTable *Memtable) Get(key []byte) (value []byte, found bool) {
 	x := mTable.Root
 	if x == nil {
-		return nil
+		return nil, false
 	}
 
 	for x != nil {
 		switch bytes.Compare(key, x.Key) {
 		case 0:
-			return x.Value
+			return x.Value, true
 		case -1:
 			x = x.Left
 		case 1:
 			x = x.Right
 		}
 	}
-	return nil
+	return nil, false
 }
 
 func (mTable *Memtable) Insert(key []byte, value []byte) {
-	newNode := mTable.RBInsert(key, value)
+	newNode, replaced := mTable.RBInsert(key, value)
+	if !replaced {
+		mTable.Size++
+	}
 	if newNode == nil {
 		// new node is root or value was updated
 		return
@@ -90,10 +97,10 @@ func (mTable *Memtable) fixInsert(z *Node) {
 	mTable.Root.Color = true
 }
 
-func (mTable *Memtable) RBInsert(key []byte, value []byte) *Node {
+func (mTable *Memtable) RBInsert(key []byte, value []byte) (*Node, bool) {
 	if mTable.Root == nil {
 		mTable.Root = &Node{Key: key, Value: value, Color: true} // root is always black
-		return nil
+		return nil, false
 	}
 
 	// Search for the correct position to insert the new x
@@ -103,14 +110,14 @@ func (mTable *Memtable) RBInsert(key []byte, value []byte) *Node {
 		// case 0: update value
 		case 0:
 			x.Value = value
-			return nil
+			return nil, true
 		// case -1 key in smaller than node key
 		case -1:
 			if x.Left == nil {
 				y := &Node{Key: key, Value: value, Color: false}
 				x.Left = y
 				y.Parent = x
-				return y
+				return y, false
 			}
 			x = x.Left
 		// case 1: key is greater than node key
@@ -119,12 +126,12 @@ func (mTable *Memtable) RBInsert(key []byte, value []byte) *Node {
 				y := &Node{Key: key, Value: value, Color: false}
 				x.Right = y
 				y.Parent = x
-				return y
+				return y, false
 			}
 			x = x.Right
 		}
 	}
-	return nil
+	return nil, false
 }
 
 // Cormen et al. Introduction to Algorithms, 4rd Edition, Chapter 13.2

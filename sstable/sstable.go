@@ -44,10 +44,10 @@ type IndexEntry struct {
 	ValOffset int64
 }
 
-func (s *SSTable) BuildSSTable(mTable *memtable.Memtable) ([]byte, error) {
+func (s *SSTable) BuildSSTable(mTable *memtable.Memtable) error {
 	f, err := os.Create(s.FileName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SSTable file: %w", err)
+		return fmt.Errorf("failed to create SSTable file: %w", err)
 	}
 	defer f.Close()
 
@@ -101,7 +101,7 @@ func (s *SSTable) BuildSSTable(mTable *memtable.Memtable) ([]byte, error) {
 		entry := &index[i]
 		n, err := sstableWriter.Write(EncodeIndexBlock(entry))
 		if err != nil {
-			return nil, err
+			return err
 		}
 		offset += int64(n)
 	}
@@ -111,7 +111,7 @@ func (s *SSTable) BuildSSTable(mTable *memtable.Memtable) ([]byte, error) {
 	binary.LittleEndian.PutUint64(buf[0:], uint64(index_block_offset))
 	_, err = sstableWriter.Write(buf)
 
-	return nil, nil
+	return nil
 }
 
 func EncodeIndexBlock(entry *IndexEntry) []byte {
@@ -125,16 +125,16 @@ func EncodeIndexBlock(entry *IndexEntry) []byte {
 	return buf
 }
 
-func (s *SSTable) Get(key []byte) (value []byte, err error) {
+func (s *SSTable) Get(key []byte) (value []byte, found bool, err error) {
 	f, err := os.Open(s.FileName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open SSTable file: %w", err)
+		return nil, false, fmt.Errorf("failed to open SSTable file: %w", err)
 	}
 	defer f.Close()
 
 	indexBuff, indexBlocksOffset, err := getIndexes(f)
 	if err != nil {
-		return nil, fmt.Errorf("get indexes: %w", err)
+		return nil, false, fmt.Errorf("get indexes: %w", err)
 	}
 	keysBlockOffset := int64(binary.LittleEndian.Uint64(indexBuff[4:12])) // Offset of first key
 
@@ -142,7 +142,7 @@ func (s *SSTable) Get(key []byte) (value []byte, err error) {
 	keysBlockLen := indexBlocksOffset - int64(keysBlockOffset)
 	keysBlock, err := readAtChecked(f, keysBlockOffset, keysBlockLen)
 	if err != nil {
-		return nil, fmt.Errorf("keys blocks read: %w", err)
+		return nil, false, fmt.Errorf("keys blocks read: %w", err)
 	}
 
 	// Search
@@ -150,14 +150,14 @@ func (s *SSTable) Get(key []byte) (value []byte, err error) {
 
 	// Extract val if found
 	if found != true {
-		return nil, nil
+		return nil, false, nil
 	}
 	value, err = readAtChecked(f, valOffset, valLen)
 	if err != nil {
-		return nil, fmt.Errorf("value read: %w", err)
+		return nil, false, fmt.Errorf("value read: %w", err)
 	}
 
-	return value, nil
+	return value, true, nil
 }
 
 func getIndexes(f *os.File) (indexesBuf []byte, indexBlocksOffset int64, err error) {

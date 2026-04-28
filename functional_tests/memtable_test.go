@@ -10,6 +10,7 @@ import (
 	"github.com/Jakub-Woszczek/kvdb/db"
 )
 
+// TODO: update tests
 func TestGet_WhenEmpty(t *testing.T) {
 	d, _ := db.NewDB()
 

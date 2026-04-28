@@ -74,9 +74,11 @@ func (s *Server) handle(conn net.Conn) {
 				resp = "ERR usage: GET <key>"
 				break
 			}
-			val := s.db.Get([]byte(parts[1])) // returns nil if not found
-			if val == nil {
+			val, found, err := s.db.Get([]byte(parts[1]))
+			if found == false {
 				resp = "NOT_FOUND"
+			} else if err != nil {
+				resp = "ERR: " + err.Error()
 			} else {
 				resp = "OK " + string(val)
 			}
