@@ -50,7 +50,7 @@ func Sandbox() {
 	runtime.ReadMemStats(&m1)
 
 	// Build tree with starting key/val sizes of 10 and 20
-	table := memtable.MEMTABLE{}
+	table := memtable.Memtable{}
 	table.Root = insertVariable(depth, 10, 20)
 
 	runtime.ReadMemStats(&m2)

@@ -8,7 +8,7 @@ import (
 )
 
 type DB struct {
-	Memtable *memtable.MEMTABLE
+	Memtable *memtable.Memtable
 	Wal      *wal.WAL
 }
 

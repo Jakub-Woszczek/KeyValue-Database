@@ -31,7 +31,7 @@ import (
 )
 
 type SSTable struct {
-	SSTableFilePath string
+	FileName string
 }
 
 const IndexEntrySize = 24
@@ -44,8 +44,8 @@ type IndexEntry struct {
 	ValOffset int64
 }
 
-func (s *SSTable) BuildSSTable(mTable *memtable.MEMTABLE) ([]byte, error) {
-	f, err := os.Create(s.SSTableFilePath)
+func (s *SSTable) BuildSSTable(mTable *memtable.Memtable) ([]byte, error) {
+	f, err := os.Create(s.FileName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SSTable file: %w", err)
 	}
@@ -126,7 +126,7 @@ func EncodeIndexBlock(entry *IndexEntry) []byte {
 }
 
 func (s *SSTable) Get(key []byte) (value []byte, err error) {
-	f, err := os.Open(s.SSTableFilePath)
+	f, err := os.Open(s.FileName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open SSTable file: %w", err)
 	}

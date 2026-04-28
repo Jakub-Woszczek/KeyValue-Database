@@ -24,7 +24,7 @@ func randomString(length int) string {
 	return string(b)
 }
 
-func GenerateRandomTree(N int, showBuild bool) (m *memtable.MEMTABLE, keys []string) {
+func GenerateRandomTree(N int, showBuild bool) (m *memtable.Memtable, keys []string) {
 	m = memtable.NewMemtable()
 
 	keys = make([]string, N)
@@ -39,7 +39,7 @@ func GenerateRandomTree(N int, showBuild bool) (m *memtable.MEMTABLE, keys []str
 	return m, keys
 }
 
-func GenerateRandomTreeEmails(N int, showBuild bool) (m *memtable.MEMTABLE, keys []string) {
+func GenerateRandomTreeEmails(N int, showBuild bool) (m *memtable.Memtable, keys []string) {
 	names := []string{
 		"Alice", "Benjamin", "Charlotte", "Daniel", "Emma",
 		"Frederick", "Grace", "Henry", "Isabella", "Jack",

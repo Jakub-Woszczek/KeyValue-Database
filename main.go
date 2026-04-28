@@ -69,7 +69,7 @@ func main() {
 	}
 	if runSSTable {
 		fmt.Println("Running SSTable builder...")
-		s := sstable.SSTable{SSTableFilePath: "sstable.dat"}
+		s := sstable.SSTable{FileName: "sstable.dat"}
 		m, _ := visualizer.GenerateRandomTree(4, true)
 
 		visualizer.PrintTree(m)
@@ -78,7 +78,7 @@ func main() {
 	}
 	if runSSTableMail {
 		fmt.Println("Running sstable mail builder...")
-		s := sstable.SSTable{SSTableFilePath: "sstableMail.dat"}
+		s := sstable.SSTable{FileName: "sstableMail.dat"}
 		m, _ := visualizer.GenerateRandomTreeEmails(4, true)
 
 		visualizer.PrintTree(m)
@@ -88,7 +88,7 @@ func main() {
 	if runSSTableRead {
 		fmt.Println("Running SSTable reader...")
 
-		s := sstable.SSTable{SSTableFilePath: "sstable.dat"}
+		s := sstable.SSTable{FileName: "sstable.dat"}
 
 		keys := [][]byte{
 			[]byte("clq"),

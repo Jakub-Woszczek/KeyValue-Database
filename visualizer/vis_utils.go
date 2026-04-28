@@ -3,11 +3,12 @@ package visualizer
 import (
 	// "bytes"
 	"fmt"
+
 	"github.com/Jakub-Woszczek/kvdb/memtable"
 )
 
 // Publiczna metoda do wywołania
-func PrintTree(m *memtable.MEMTABLE) {
+func PrintTree(m *memtable.Memtable) {
 	if m.Root == nil {
 		fmt.Println("(empty tree)")
 		return

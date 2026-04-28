@@ -2,7 +2,7 @@ package memtable
 
 import "bytes"
 
-type MEMTABLE struct {
+type Memtable struct {
 	Root *Node
 }
 
@@ -16,11 +16,11 @@ type Node struct {
 	Color       bool // True for black, false for red
 }
 
-func NewMemtable() *MEMTABLE {
-	return &MEMTABLE{Root: nil}
+func NewMemtable() *Memtable {
+	return &Memtable{Root: nil}
 }
 
-func (mTable *MEMTABLE) Get(key []byte) []byte {
+func (mTable *Memtable) Get(key []byte) []byte {
 	x := mTable.Root
 	if x == nil {
 		return nil
@@ -39,7 +39,7 @@ func (mTable *MEMTABLE) Get(key []byte) []byte {
 	return nil
 }
 
-func (mTable *MEMTABLE) Insert(key []byte, value []byte) {
+func (mTable *Memtable) Insert(key []byte, value []byte) {
 	newNode := mTable.RBInsert(key, value)
 	if newNode == nil {
 		// new node is root or value was updated
@@ -51,7 +51,7 @@ func (mTable *MEMTABLE) Insert(key []byte, value []byte) {
 }
 
 // Cormen et al. Introduction to Algorithms, 4rd Edition, Chapter 13.3
-func (mTable *MEMTABLE) fixInsert(z *Node) {
+func (mTable *Memtable) fixInsert(z *Node) {
 	for z.Parent != nil && !z.Parent.Color {
 		if z.Parent == z.Parent.Parent.Left {
 			y := z.Parent.Parent.Right // uncle
@@ -90,7 +90,7 @@ func (mTable *MEMTABLE) fixInsert(z *Node) {
 	mTable.Root.Color = true
 }
 
-func (mTable *MEMTABLE) RBInsert(key []byte, value []byte) *Node {
+func (mTable *Memtable) RBInsert(key []byte, value []byte) *Node {
 	if mTable.Root == nil {
 		mTable.Root = &Node{Key: key, Value: value, Color: true} // root is always black
 		return nil
@@ -128,7 +128,7 @@ func (mTable *MEMTABLE) RBInsert(key []byte, value []byte) *Node {
 }
 
 // Cormen et al. Introduction to Algorithms, 4rd Edition, Chapter 13.2
-func (T *MEMTABLE) RotateLeft(x *Node) {
+func (T *Memtable) RotateLeft(x *Node) {
 	if x.Right == nil {
 		return
 	}
@@ -150,7 +150,7 @@ func (T *MEMTABLE) RotateLeft(x *Node) {
 }
 
 // Cormen et al. Introduction to Algorithms, 4rd Edition, Chapter 13.2
-func (T *MEMTABLE) RotateRight(x *Node) {
+func (T *Memtable) RotateRight(x *Node) {
 	if x.Left == nil {
 		return
 	}
