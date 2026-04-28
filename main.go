@@ -21,6 +21,7 @@ var runVis bool
 var runServer bool
 var runSandbox bool
 var runSSTable bool
+var runSSTableMail bool
 var runSSTableRead bool
 
 func main() {
@@ -28,6 +29,7 @@ func main() {
 	flag.BoolVar(&runServer, "s", false, "run the server")
 	flag.BoolVar(&runSandbox, "sdbx", false, "run the sandbox code")
 	flag.BoolVar(&runSSTable, "st", false, "run sstable")
+	flag.BoolVar(&runSSTableMail, "stm", false, "run sstable mail")
 	flag.BoolVar(&runSSTableRead, "stg", false, "run sstable get method")
 
 	flag.Parse()
@@ -69,6 +71,15 @@ func main() {
 		fmt.Println("Running SSTable builder...")
 		s := sstable.SSTable{SSTableFilePath: "sstable.dat"}
 		m, _ := visualizer.GenerateRandomTree(4, true)
+
+		visualizer.PrintTree(m)
+		s.BuildSSTable(m)
+		return
+	}
+	if runSSTableMail {
+		fmt.Println("Running sstable mail builder...")
+		s := sstable.SSTable{SSTableFilePath: "sstableMail.dat"}
+		m, _ := visualizer.GenerateRandomTreeEmails(4, true)
 
 		visualizer.PrintTree(m)
 		s.BuildSSTable(m)
