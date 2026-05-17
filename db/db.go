@@ -9,28 +9,28 @@ import (
 )
 
 type DB struct {
-	Memtable         *memtable.Memtable
-	SstMenager       *sstable.SSTableMenager
-	Wal              *wal.WAL
-	memtableTreshold int
+	Memtable          *memtable.Memtable
+	SstManager        *sstable.SSTableManager
+	Wal               *wal.WAL
+	memtableThreshold int
 }
 
-func NewDB(mTreshold int, ssTableDir string) (*DB, error) {
+func NewDB(mThreshold int, ssTableDir string) (*DB, error) {
 	Wal, err := wal.OpenWAL("wal.log")
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize WAL: %w", err)
 	}
 
-	ssm, err := sstable.NewSSTableMenager(ssTableDir)
+	ssm, err := sstable.NewSSTableManager(ssTableDir)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to init sstable manager: %w", err)
 	}
 
 	db := &DB{
-		Memtable:         memtable.NewMemtable(),
-		SstMenager:       ssm,
-		Wal:              Wal,
-		memtableTreshold: mTreshold,
+		Memtable:          memtable.NewMemtable(),
+		SstManager:        ssm,
+		Wal:               Wal,
+		memtableThreshold: mThreshold,
 	}
 
 	return db, nil
@@ -53,7 +53,7 @@ func (db *DB) Get(key []byte) (value []byte, found bool, err error) {
 		return
 	}
 
-	value, found, err = db.SstMenager.Get(key)
+	value, found, err = db.SstManager.Get(key)
 	if found {
 		return
 	}
@@ -66,10 +66,10 @@ func (db *DB) Close(rmWalFile bool) error {
 }
 
 func (db *DB) FlushIfOverflow() error {
-	if db.memtableTreshold > db.Memtable.Size {
+	if db.memtableThreshold > db.Memtable.Size {
 		return nil
 	}
-	err := db.SstMenager.Flush(db.Memtable)
+	err := db.SstManager.Flush(db.Memtable)
 
 	db.Memtable = memtable.NewMemtable()
 	return err

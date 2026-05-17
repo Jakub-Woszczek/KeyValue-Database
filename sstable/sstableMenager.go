@@ -21,20 +21,20 @@ import (
 
 const LevelsAmount = 7
 
-type SSTableMenager struct {
+type SSTableManager struct {
 	Dir    string
 	levels [][]*SSTable
 	// memtable *memtable.Memtable
 	sstCounter int32
 }
 
-func NewSSTableMenager(sstFolderPath string) (*SSTableMenager, error) {
+func NewSSTableManager(sstFolderPath string) (*SSTableManager, error) {
 	err := os.MkdirAll(sstFolderPath, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init sstable folder: %w", err)
 	}
 
-	sm := &SSTableMenager{
+	sm := &SSTableManager{
 		Dir:        sstFolderPath,
 		levels:     make([][]*SSTable, LevelsAmount),
 		sstCounter: 0,
@@ -42,7 +42,7 @@ func NewSSTableMenager(sstFolderPath string) (*SSTableMenager, error) {
 	return sm, nil
 }
 
-func (sm *SSTableMenager) Get(key []byte) (value []byte, found bool, err error) {
+func (sm *SSTableManager) Get(key []byte) (value []byte, found bool, err error) {
 	var errs error
 
 	// Sstables search
@@ -64,7 +64,7 @@ func (sm *SSTableMenager) Get(key []byte) (value []byte, found bool, err error) 
 	return nil, false, errs
 }
 
-func (sm *SSTableMenager) Flush(m *memtable.Memtable) error {
+func (sm *SSTableManager) Flush(m *memtable.Memtable) error {
 	// stLvlAmount := len(sm.levels[0])
 	fileName := fmt.Sprintf("L%d_%06d.sst", 0, sm.sstCounter)
 
@@ -79,7 +79,7 @@ func (sm *SSTableMenager) Flush(m *memtable.Memtable) error {
 
 	// append to Lvl 0
 	sm.levels[0] = append(sm.levels[0], s)
-	sm.sstCounter++ // increase if succedes
+	sm.sstCounter++ // increase if succeeds
 
 	return nil
 }

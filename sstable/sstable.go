@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+
 	// "path/filepath"
 
 	datastructures "github.com/Jakub-Woszczek/kvdb/dataStructures"
@@ -63,9 +64,9 @@ func (s *SSTable) BuildSSTable(mTable *memtable.Memtable, folderPath string) err
 	keyOffset := mTable.ValuesSize
 	indexOffset := keyOffset + mTable.KeysSize
 	// buffers
-	valPosBuffer := datastructures.NewSeekableBuffer(f, valOffset, int(mTable.ValuesSize)) // TODO: change size
-	keyPosBuffer := datastructures.NewSeekableBuffer(f, keyOffset, int(mTable.KeysSize))
-	indexPosBuffer := datastructures.NewSeekableBuffer(f, indexOffset, int(mTable.Size*IndexEntrySize))
+	valPosBuffer := datastructures.NewBufferedWriterAt(f, valOffset, int(mTable.ValuesSize)) // TODO: change size
+	keyPosBuffer := datastructures.NewBufferedWriterAt(f, keyOffset, int(mTable.KeysSize))
+	indexPosBuffer := datastructures.NewBufferedWriterAt(f, indexOffset, int(mTable.Size*IndexEntrySize))
 
 	root := mTable.Root
 	iter := memtable.NewMemtableIterator(root)

@@ -5,15 +5,15 @@ import (
 	"os"
 )
 
-type SeekableBuffer struct {
+type BufferedWriterAt struct {
 	file   *os.File
 	buffer []byte
 	pos    int   // Current position in the buffer
 	offset int64 // The starting physical offset in the file for this buffer
 }
 
-func NewSeekableBuffer(f *os.File, startOffset int64, size int) *SeekableBuffer {
-	return &SeekableBuffer{
+func NewBufferedWriterAt(f *os.File, startOffset int64, size int) *BufferedWriterAt {
+	return &BufferedWriterAt{
 		file:   f,
 		buffer: make([]byte, size),
 		offset: startOffset,
@@ -21,7 +21,7 @@ func NewSeekableBuffer(f *os.File, startOffset int64, size int) *SeekableBuffer 
 	}
 }
 
-func (sb *SeekableBuffer) Put(data []byte) error {
+func (sb *BufferedWriterAt) Put(data []byte) error {
 	dataLen := len(data)
 
 	// data doesn't fit
@@ -43,12 +43,12 @@ func (sb *SeekableBuffer) Put(data []byte) error {
 	return nil
 }
 
-func (sb *SeekableBuffer) Flush() error {
+func (sb *BufferedWriterAt) Flush() error {
 	if sb.pos == 0 {
 		return nil
 	}
 
-	_, err := sb.file.WriteAt(sb.buffer[:sb.pos], sb.offset) // TODO: add gorutine for it
+	_, err := sb.file.WriteAt(sb.buffer[:sb.pos], sb.offset) // TODO: add goroutine for it
 	if err != nil {
 		return fmt.Errorf("flush failed at offset %d: %w", sb.offset, err)
 	}
@@ -58,6 +58,6 @@ func (sb *SeekableBuffer) Flush() error {
 	return nil
 }
 
-func (sb *SeekableBuffer) CurrentOffset() int64 {
+func (sb *BufferedWriterAt) CurrentOffset() int64 {
 	return sb.offset + int64(sb.pos)
 }
