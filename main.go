@@ -10,6 +10,8 @@ import (
 
 	"github.com/Jakub-Woszczek/kvdb/db"
 	// "github.com/Jakub-Woszczek/kvdb/memtable"
+	"path/filepath"
+
 	"github.com/Jakub-Woszczek/kvdb/sandbox"
 	"github.com/Jakub-Woszczek/kvdb/server"
 	"github.com/Jakub-Woszczek/kvdb/sstable"
@@ -37,7 +39,7 @@ func main() {
 	if runServer {
 		godotenv.Load()
 		fmt.Println("Starting server...")
-		d, err := db.NewDB(10)
+		d, err := db.NewDB(1000, filepath.Join("server", "tablesFolder"))
 		if err != nil {
 			fmt.Println("Failed to initialize database:", err)
 			return
@@ -65,7 +67,7 @@ func main() {
 	}
 	if runSandbox {
 		fmt.Println("Running sandbox...")
-		sandbox.EasyCompareXD()
+		sandbox.PathShowcase()
 	}
 	if runSSTable {
 		fmt.Println("Running SSTable builder...")
@@ -73,7 +75,7 @@ func main() {
 		m, _ := visualizer.GenerateRandomTree(4, true)
 
 		visualizer.PrintTree(m)
-		s.BuildSSTable(m)
+		s.BuildSSTable(m, "./")
 		return
 	}
 	if runSSTableMail {
@@ -82,7 +84,7 @@ func main() {
 		m, _ := visualizer.GenerateRandomTreeEmails(4, true)
 
 		visualizer.PrintTree(m)
-		s.BuildSSTable(m)
+		s.BuildSSTable(m, "./")
 		return
 	}
 	if runSSTableRead {

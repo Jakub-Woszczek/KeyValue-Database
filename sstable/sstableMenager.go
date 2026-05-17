@@ -13,9 +13,13 @@ package sstable
 import (
 	"errors"
 	"fmt"
-	"github.com/Jakub-Woszczek/kvdb/memtable"
+	"os"
 	"path/filepath"
+
+	"github.com/Jakub-Woszczek/kvdb/memtable"
 )
+
+const LevelsAmount = 7
 
 type SSTableMenager struct {
 	Dir    string
@@ -24,11 +28,18 @@ type SSTableMenager struct {
 	sstCounter int32
 }
 
-func NewSSTableMenager(dir string) *SSTableMenager {
-	sm := &SSTableMenager{
-		Dir: dir,
+func NewSSTableMenager(sstFolderPath string) (*SSTableMenager, error) {
+	err := os.MkdirAll(sstFolderPath, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init sstable folder: %w", err)
 	}
-	return sm
+
+	sm := &SSTableMenager{
+		Dir:        sstFolderPath,
+		levels:     make([][]*SSTable, LevelsAmount),
+		sstCounter: 0,
+	}
+	return sm, nil
 }
 
 func (sm *SSTableMenager) Get(key []byte) (value []byte, found bool, err error) {
@@ -36,12 +47,9 @@ func (sm *SSTableMenager) Get(key []byte) (value []byte, found bool, err error) 
 
 	// Sstables search
 	for _, level := range sm.levels {
-		for _, sstable := range level {
-			path := filepath.Join(sm.Dir, sstable.FileName)
-			sstable.FileName = path // not sure if i should update like that
+		for i := len(level) - 1; i >= 0; i-- {
 
-			value, found, err = sstable.Get(key)
-
+			value, found, err = level[i].Get(key)
 			if err != nil {
 				errs = errors.Join(errs, err)
 				continue
@@ -61,10 +69,10 @@ func (sm *SSTableMenager) Flush(m *memtable.Memtable) error {
 	fileName := fmt.Sprintf("L%d_%06d.sst", 0, sm.sstCounter)
 
 	s := &SSTable{
-		FileName: fileName,
+		FilePath: filepath.Join(sm.Dir, fileName),
 	}
 
-	err := s.BuildSSTable(m)
+	err := s.BuildSSTable(m, sm.Dir)
 	if err != nil {
 		return fmt.Errorf("sstable build: %w", err)
 	}

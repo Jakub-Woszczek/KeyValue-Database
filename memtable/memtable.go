@@ -1,10 +1,19 @@
 package memtable
 
-import "bytes"
+import (
+	"bytes"
+	// "fmt"
+
+	// "testing/quick"
+
+	datastructures "github.com/Jakub-Woszczek/kvdb/dataStructures"
+)
 
 type Memtable struct {
-	Root *Node
-	Size int
+	Root       *Node
+	Size       int   // Total number of nodes
+	KeysSize   int64 // Total bytes of all keys
+	ValuesSize int64 // Total bytes of all values
 }
 
 type Node struct {
@@ -44,9 +53,13 @@ func (mTable *Memtable) Get(key []byte) (value []byte, found bool) {
 }
 
 func (mTable *Memtable) Insert(key []byte, value []byte) {
-	newNode, replaced := mTable.RBInsert(key, value)
-	if !replaced {
+	newNode, isReplaced, oldValLen := mTable.RBInsert(key, value)
+	if !isReplaced {
 		mTable.Size++
+		mTable.KeysSize += int64(len(key))
+		mTable.ValuesSize += int64(len(value))
+	} else {
+		mTable.ValuesSize += int64(len(value)) - oldValLen
 	}
 	if newNode == nil {
 		// new node is root or value was updated
@@ -97,10 +110,10 @@ func (mTable *Memtable) fixInsert(z *Node) {
 	mTable.Root.Color = true
 }
 
-func (mTable *Memtable) RBInsert(key []byte, value []byte) (*Node, bool) {
+func (mTable *Memtable) RBInsert(key []byte, value []byte) (node *Node, isReplaced bool, oldValLen int64) {
 	if mTable.Root == nil {
 		mTable.Root = &Node{Key: key, Value: value, Color: true} // root is always black
-		return nil, false
+		return nil, false, 0
 	}
 
 	// Search for the correct position to insert the new x
@@ -109,15 +122,16 @@ func (mTable *Memtable) RBInsert(key []byte, value []byte) (*Node, bool) {
 		switch bytes.Compare(key, x.Key) {
 		// case 0: update value
 		case 0:
+			oldValLen = int64(len(x.Value)) // Should not cause problems (if on save validate valLen < 2**32-1)
 			x.Value = value
-			return nil, true
+			return nil, true, oldValLen
 		// case -1 key in smaller than node key
 		case -1:
 			if x.Left == nil {
 				y := &Node{Key: key, Value: value, Color: false}
 				x.Left = y
 				y.Parent = x
-				return y, false
+				return y, false, 0
 			}
 			x = x.Left
 		// case 1: key is greater than node key
@@ -126,12 +140,12 @@ func (mTable *Memtable) RBInsert(key []byte, value []byte) (*Node, bool) {
 				y := &Node{Key: key, Value: value, Color: false}
 				x.Right = y
 				y.Parent = x
-				return y, false
+				return y, false, 0
 			}
 			x = x.Right
 		}
 	}
-	return nil, false
+	return nil, false, 0
 }
 
 // Cormen et al. Introduction to Algorithms, 4rd Edition, Chapter 13.2
@@ -176,4 +190,41 @@ func (T *Memtable) RotateRight(x *Node) {
 	}
 	y.Right = x
 	x.Parent = y
+}
+
+type MemtableIterator struct {
+	stack *datastructures.Stack[*Node]
+}
+
+func NewMemtableIterator(root *Node) *MemtableIterator {
+	iter := &MemtableIterator{
+		stack: &datastructures.Stack[*Node]{},
+	}
+	iter.pushLeft(root)
+	return iter
+}
+
+func (iter *MemtableIterator) pushLeft(node *Node) {
+	for node != nil {
+		iter.stack.Push(node)
+		node = node.Left
+	}
+}
+
+func (iter *MemtableIterator) HasNext() bool {
+	return len(*iter.stack) > 0
+}
+
+func (iter *MemtableIterator) Next() (*Node, bool) {
+	if !iter.HasNext() {
+		return nil, false
+	}
+
+	node, valid := iter.stack.Pop()
+	if !valid {
+		return node, valid
+	}
+
+	iter.pushLeft(node.Right)
+	return node, valid
 }

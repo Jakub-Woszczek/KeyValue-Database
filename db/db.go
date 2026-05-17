@@ -15,17 +15,24 @@ type DB struct {
 	memtableTreshold int
 }
 
-func NewDB(mTreshold int) (*DB, error) {
+func NewDB(mTreshold int, ssTableDir string) (*DB, error) {
 	Wal, err := wal.OpenWAL("wal.log")
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize WAL: %w", err)
 	}
 
+	ssm, err := sstable.NewSSTableMenager(ssTableDir)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to init sstable manager: %w", err)
+	}
+
 	db := &DB{
 		Memtable:         memtable.NewMemtable(),
+		SstMenager:       ssm,
 		Wal:              Wal,
 		memtableTreshold: mTreshold,
 	}
+
 	return db, nil
 }
 
@@ -36,6 +43,7 @@ func (db *DB) Put(key, value []byte) error {
 	}
 
 	db.Memtable.Insert(key, value)
+	db.FlushIfOverflow()
 	return nil
 }
 
@@ -58,9 +66,11 @@ func (db *DB) Close(rmWalFile bool) error {
 }
 
 func (db *DB) FlushIfOverflow() error {
-	if db.memtableTreshold < db.Memtable.Size {
+	if db.memtableTreshold > db.Memtable.Size {
 		return nil
 	}
 	err := db.SstMenager.Flush(db.Memtable)
+
+	db.Memtable = memtable.NewMemtable()
 	return err
 }

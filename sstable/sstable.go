@@ -19,12 +19,12 @@ Footer:
 package sstable
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
+	// "path/filepath"
 
 	datastructures "github.com/Jakub-Woszczek/kvdb/dataStructures"
 	"github.com/Jakub-Woszczek/kvdb/memtable"
@@ -32,9 +32,11 @@ import (
 
 type SSTable struct {
 	FileName string
+	FilePath string
 }
 
 const IndexEntrySize = 24
+const FooterSize = 8
 
 type IndexEntry struct {
 	Key       []byte
@@ -44,93 +46,98 @@ type IndexEntry struct {
 	ValOffset int64
 }
 
-func (s *SSTable) BuildSSTable(mTable *memtable.Memtable) error {
-	f, err := os.Create(s.FileName)
+func (s *SSTable) BuildSSTable(mTable *memtable.Memtable, folderPath string) error {
+	f, err := os.Create(s.FilePath)
 	if err != nil {
 		return fmt.Errorf("failed to create SSTable file: %w", err)
 	}
 	defer f.Close()
 
-	sstableWriter := bufio.NewWriter(f)
-	defer sstableWriter.Flush()
+	fileSize := mTable.ValuesSize + mTable.KeysSize + int64(mTable.Size*IndexEntrySize) + FooterSize
+	if err = f.Truncate(fileSize); err != nil {
+		return fmt.Errorf("Failed to truncate (sstable file): %w", err)
+	}
 
-	var index []IndexEntry // TODO: Make this static size (given size of memtable)
-	var offset int64 = 0
+	// offsets
+	valOffset := int64(0)
+	keyOffset := mTable.ValuesSize
+	indexOffset := keyOffset + mTable.KeysSize
+	// buffers
+	valPosBuffer := datastructures.NewSeekableBuffer(f, valOffset, int(mTable.ValuesSize)) // TODO: change size
+	keyPosBuffer := datastructures.NewSeekableBuffer(f, keyOffset, int(mTable.KeysSize))
+	indexPosBuffer := datastructures.NewSeekableBuffer(f, indexOffset, int(mTable.Size*IndexEntrySize))
 
-	stack := datastructures.Stack[*memtable.Node]{}
-	node := mTable.Root
+	root := mTable.Root
+	iter := memtable.NewMemtableIterator(root)
 
-	for stack.Len() > 0 || node != nil {
-		for node != nil {
-			stack.Push(node)
-			node = node.Left
+	for iter.HasNext() {
+		node, valid := iter.Next()
+		if !valid {
+			break
+		}
+		vOffset := valPosBuffer.CurrentOffset()
+		kOffset := keyPosBuffer.CurrentOffset()
+
+		vLen := int32(len(node.Value))
+		kLen := int32(len(node.Key))
+
+		if err := valPosBuffer.Put(node.Value); err != nil {
+			return fmt.Errorf("failed writing value payload: %w", err)
+		}
+		if err := keyPosBuffer.Put(node.Key); err != nil {
+			return fmt.Errorf("failed writing key payload: %w", err)
 		}
 
-		node, _ = stack.Pop()
-
-		valOffset := offset
-		n, _ := sstableWriter.Write(node.Value)
-		valLen := int32(n)
-
-		offset += int64(n)
-
-		index = append(index, IndexEntry{
-			Key:       node.Key, // reference
-			ValOffset: valOffset,
-			ValLen:    valLen,
-		})
-
-		node = node.Right
-	}
-
-	for i := range index {
-		entry := &index[i]
-
-		entryKeyOffset := offset
-		n, _ := sstableWriter.Write(entry.Key)
-
-		entry.KeyOffset = entryKeyOffset
-		entry.KeyLen = int32(n)
-
-		offset += int64(n)
-
-	}
-
-	index_block_offset := offset
-	for i := range index {
-		entry := &index[i]
-		n, err := sstableWriter.Write(EncodeIndexBlock(entry))
-		if err != nil {
-			return err
+		encodedIndex := EncodeIndexBlock(kLen, kOffset, vLen, vOffset)
+		if err := indexPosBuffer.Put(encodedIndex); err != nil {
+			return fmt.Errorf("failed writing index entry: %w", err)
 		}
-		offset += int64(n)
 	}
 
-	// Write footer
-	buf := make([]byte, 8)
-	binary.LittleEndian.PutUint64(buf[0:], uint64(index_block_offset))
-	_, err = sstableWriter.Write(buf)
+	// flush remaining at the end
+	if err := valPosBuffer.Flush(); err != nil {
+		return err
+	}
+	if err := keyPosBuffer.Flush(); err != nil {
+		return err
+	}
+	if err := indexPosBuffer.Flush(); err != nil {
+		return err
+	}
 
+	// footer
+	footerBuf := make([]byte, FooterSize)
+	binary.LittleEndian.PutUint64(footerBuf[0:], uint64(indexOffset))
+
+	footerWriteOffset := indexOffset + int64(mTable.Size*IndexEntrySize)
+	_, err = f.WriteAt(footerBuf, footerWriteOffset)
+	if err != nil {
+		return fmt.Errorf("failed writing footer block: %w", err)
+	}
 	return nil
 }
 
-func EncodeIndexBlock(entry *IndexEntry) []byte {
+func EncodeIndexBlock(keyLen int32, keyOffset int64, valLen int32, valOffset int64) []byte {
 	buf := make([]byte, IndexEntrySize)
 
-	binary.LittleEndian.PutUint32(buf[0:], uint32(entry.KeyLen))
-	binary.LittleEndian.PutUint64(buf[4:], uint64(entry.KeyOffset))
-	binary.LittleEndian.PutUint32(buf[12:], uint32(entry.ValLen))
-	binary.LittleEndian.PutUint64(buf[16:], uint64(entry.ValOffset))
+	binary.LittleEndian.PutUint32(buf[0:4], uint32(keyLen))
+	binary.LittleEndian.PutUint64(buf[4:12], uint64(keyOffset))
+	binary.LittleEndian.PutUint32(buf[12:16], uint32(valLen))
+	binary.LittleEndian.PutUint64(buf[16:24], uint64(valOffset))
 
 	return buf
 }
 
 func (s *SSTable) Get(key []byte) (value []byte, found bool, err error) {
-	f, err := os.Open(s.FileName)
+	f, err := os.Open(s.FilePath)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to open SSTable file: %w", err)
 	}
 	defer f.Close()
+
+	if string(key) == "k9829" {
+		fmt.Println("SS get() for k9829")
+	}
 
 	indexBuff, indexBlocksOffset, err := getIndexes(f)
 	if err != nil {

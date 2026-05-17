@@ -1,0 +1,20 @@
+-------- Basic with sstables flush -------- 
+- no compation
+- no blum filter
+OPS = 60_000 
+KEY_SPACE = 10_000
+rnd = random.Random(42)
+
+❯ python client/heavyLoadTest.py
+[10000/60000] 19.04s | PUT=6016 GET=3985 MISS=3055
+[20000/60000] 40.39s | PUT=12005 GET=7996 MISS=4702
+[30000/60000] 61.93s | PUT=18028 GET=11973 MISS=5576
+[40000/60000] 83.86s | PUT=24046 GET=15955 MISS=6084
+[50000/60000] 106.15s | PUT=30029 GET=19972 MISS=6369
+
+=== STRESS TEST COMPLETE ===
+Total ops: 60000
+PUTs: 35959, GETs: 24041, MISSES: 6509
+Time: 128.21s
+Ops/sec: 467.97
+Consistency: OK

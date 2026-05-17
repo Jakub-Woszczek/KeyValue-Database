@@ -35,3 +35,5 @@ go.work.sum
 
 raport_stuff/
 sstable.dat
+sandbox/
+__pycache__/
