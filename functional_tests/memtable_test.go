@@ -5,68 +5,114 @@ import (
 	"math/rand"
 	"testing"
 
-	// "time"
-
 	"github.com/Jakub-Woszczek/kvdb/db"
 )
 
-// TODO: update tests
-func TestGet_WhenEmpty(t *testing.T) {
-	d, _ := db.NewDB()
+func newTestDB(t *testing.T) *db.DB {
+	t.Helper()
 
-	val := d.Get([]byte("key"))
-	if val != nil {
-		t.Fatalf("expected nil, got %v", val)
+	tmpDir := t.TempDir()
+
+	d, err := db.NewDB(
+		1000000,
+		tmpDir,
+	)
+	if err != nil {
+		t.Fatalf("failed to create db: %v", err)
+	}
+
+	t.Cleanup(func() {
+		d.Close(true)
+	})
+
+	return d
+}
+
+func TestGet_WhenEmpty(t *testing.T) {
+	d := newTestDB(t)
+
+	val, found, err := d.Get([]byte("key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if found {
+		t.Fatalf("expected not found, got %v", val)
 	}
 }
 
 func TestPutAndGet(t *testing.T) {
-	d, _ := db.NewDB()
+	d := newTestDB(t)
 
-	d.Put([]byte("key"), []byte("value"))
+	err := d.Put([]byte("key"), []byte("value"))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	val := d.Get([]byte("key"))
-	if string(val) != "value" {
-		t.Fatalf("expected value, got %s", val)
+	val, found, err := d.Get([]byte("key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !found {
+		t.Fatal("expected key to exist")
+	}
+
+	if !bytes.Equal(val, []byte("value")) {
+		t.Fatalf("expected value, got %q", val)
 	}
 }
 
 func TestGet_NonExistingKey(t *testing.T) {
-	d, _ := db.NewDB()
+	d := newTestDB(t)
 
-	d.Put([]byte("key"), []byte("value"))
+	err := d.Put([]byte("key"), []byte("value"))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	val := d.Get([]byte("other"))
-	if val != nil {
-		t.Fatalf("expected nil, got %v", val)
+	val, found, err := d.Get([]byte("other"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if found {
+		t.Fatalf("expected not found, got %v", val)
 	}
 }
 
 func TestPut_OverwriteValue(t *testing.T) {
-	d, _ := db.NewDB()
+	d := newTestDB(t)
 
-	d.Put([]byte("key"), []byte("value1"))
-	d.Put([]byte("key"), []byte("value2"))
+	err := d.Put([]byte("key"), []byte("value1"))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	val := d.Get([]byte("key"))
-	if string(val) != "value2" {
-		t.Fatalf("expected value2, got %s", val)
+	err = d.Put([]byte("key"), []byte("value2"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	val, found, err := d.Get([]byte("key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !found {
+		t.Fatal("expected key to exist")
+	}
+
+	if !bytes.Equal(val, []byte("value2")) {
+		t.Fatalf("expected value2, got %q", val)
 	}
 }
 
-// This test performs a series of random Put and Get operations
-// and checks consistency against a reference map.
 func TestDB_RandomizedConsistency(t *testing.T) {
-	d, err := db.NewDB()
-	if err != nil {
-		t.Fatalf("failed to create db: %v", err)
-	}
-	defer d.Close(true) // delete WAL file after test
+	d := newTestDB(t)
 
-	// reference model
 	ref := make(map[string][]byte)
 
-	// deterministic seed for reproducibility
 	rng := rand.New(rand.NewSource(42))
 
 	const ops = 1000
@@ -75,7 +121,6 @@ func TestDB_RandomizedConsistency(t *testing.T) {
 		key := randomBytes(rng, 10)
 		value := randomBytes(rng, 20)
 
-		// 70% writes, 30% reads
 		if rng.Float64() < 0.7 {
 			err := d.Put(key, value)
 			if err != nil {
@@ -83,29 +128,53 @@ func TestDB_RandomizedConsistency(t *testing.T) {
 			}
 
 			ref[string(key)] = value
+
 		} else {
-			dbVal := d.Get(key)
+			dbVal, found, err := d.Get(key)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			refVal, exists := ref[string(key)]
 
 			if !exists {
-				if dbVal != nil {
-					t.Fatalf("expected nil for key %q, got %v", key, dbVal)
+				if found {
+					t.Fatalf("expected not found")
 				}
 			} else {
+				if !found {
+					t.Fatalf("expected key %q", key)
+				}
+
 				if !bytes.Equal(dbVal, refVal) {
-					t.Fatalf("value mismatch for key %q: expected %v, got %v",
-						key, refVal, dbVal)
+					t.Fatalf(
+						"value mismatch for key %q: expected %v got %v",
+						key,
+						refVal,
+						dbVal,
+					)
 				}
 			}
 		}
 	}
 
-	// full verification pass
 	for k, v := range ref {
-		dbVal := d.Get([]byte(k))
+		dbVal, found, err := d.Get([]byte(k))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !found {
+			t.Fatalf("missing key %q", k)
+		}
+
 		if !bytes.Equal(dbVal, v) {
-			t.Fatalf("final check failed for key %q: expected %v, got %v",
-				k, v, dbVal)
+			t.Fatalf(
+				"final check failed for key %q: expected %v got %v",
+				k,
+				v,
+				dbVal,
+			)
 		}
 	}
 }
